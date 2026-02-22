@@ -1,20 +1,278 @@
-
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotto Number Generator</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>로또 번호 추천기 (5세트)</title>
+  <style>
+    :root{
+      --max: 920px;
+    }
+
+    /* ===== Background (Gradient) ===== */
+    body{
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+      color: #111;
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(255, 0, 153, 0.18), transparent 60%),
+        radial-gradient(900px 500px at 90% 20%, rgba(0, 204, 255, 0.18), transparent 60%),
+        radial-gradient(900px 500px at 30% 90%, rgba(133, 255, 189, 0.16), transparent 60%),
+        linear-gradient(135deg, #0b1020 0%, #141b2d 40%, #0b1020 100%);
+      overflow-x: hidden;
+    }
+
+    /* subtle noise-like overlay */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06), transparent 45%);
+      mix-blend-mode: overlay;
+      opacity: 0.6;
+    }
+
+    .container{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 42px 20px 70px;
+    }
+
+    /* ===== Glass Card ===== */
+    .card{
+      border-radius: 18px;
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    h1{
+      margin: 0 0 10px;
+      font-size: 26px;
+      letter-spacing: -0.02em;
+      color: rgba(255,255,255,0.92);
+    }
+    p{
+      margin: 0 0 16px;
+      color: rgba(255,255,255,0.75);
+    }
+
+    /* ===== Buttons ===== */
+    .row{
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .btn{
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #0b1020;
+      background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.75));
+      box-shadow: 0 10px 20px rgba(0,0,0,0.28);
+      transition: transform 0.08s ease, opacity 0.12s ease;
+    }
+    .btn:hover{ opacity: 0.95; }
+    .btn:active{ transform: translateY(1px); }
+
+    .btn.secondary{
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: none;
+    }
+
+    /* ===== Sets ===== */
+    .sets{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .set{
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+      padding: 14px;
+    }
+
+    .setHeader{
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: rgba(255,255,255,0.85);
+    }
+    .setTitle{
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+    .setText{
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      word-break: keep-all;
+    }
+
+    .numbers{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      min-height: 52px;
+    }
+
+    .ball{
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.10);
+    }
+
+    .meta{
+      margin-top: 14px;
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+    }
+
+    .hint{
+      margin-top: 8px;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>Lotto Number Generator</h1>
-        <div class="lotto-numbers">
-            <!-- Numbers will be generated here -->
-        </div>
-        <button id="generate-btn">Generate Numbers</button>
+  <div class="container">
+    <div class="card">
+      <h1>로또 번호 추천기</h1>
+      <p>버튼을 누르면 <b>6개 번호 세트</b>가 <b>한 번에 5개</b> 추천됩니다. (1~45, 중복 없음)</p>
+
+      <div class="row">
+        <button class="btn" id="btnPick" type="button">5세트 추천</button>
+        <button class="btn secondary" id="btnCopy" type="button">전체 복사</button>
+      </div>
+
+      <div class="sets" id="sets" aria-live="polite"></div>
+      <div class="meta" id="meta">아직 추천된 번호가 없습니다.</div>
+      <div class="hint">TIP: “전체 복사”를 누르면 5세트가 줄바꿈 형태로 복사됩니다.</div>
     </div>
-    <script src="main.js"></script>
+  </div>
+
+  <script>
+    const $sets = document.getElementById("sets");
+    const $meta = document.getElementById("meta");
+    const $btnPick = document.getElementById("btnPick");
+    const $btnCopy = document.getElementById("btnCopy");
+
+    let lastPicks = []; // 2D array: [[...6nums], ... x5]
+
+    function pickOneSet() {
+      const arr = Array.from({ length: 45 }, (_, i) => i + 1);
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr.slice(0, 6).sort((a, b) => a - b);
+    }
+
+    function pickFiveSets() {
+      const sets = [];
+      for (let i = 0; i < 5; i++) sets.push(pickOneSet());
+      return sets;
+    }
+
+    function render(sets) {
+      $sets.innerHTML = "";
+
+      sets.forEach((numbers, idx) => {
+        const set = document.createElement("div");
+        set.className = "set";
+
+        const header = document.createElement("div");
+        header.className = "setHeader";
+
+        const title = document.createElement("div");
+        title.className = "setTitle";
+        title.textContent = `세트 ${idx + 1}`;
+
+        const text = document.createElement("div");
+        text.className = "setText";
+        text.textContent = numbers.join(", ");
+
+        header.appendChild(title);
+        header.appendChild(text);
+
+        const numsWrap = document.createElement("div");
+        numsWrap.className = "numbers";
+
+        numbers.forEach(n => {
+          const ball = document.createElement("div");
+          ball.className = "ball";
+          ball.textContent = n;
+          numsWrap.appendChild(ball);
+        });
+
+        set.appendChild(header);
+        set.appendChild(numsWrap);
+        $sets.appendChild(set);
+      });
+
+      const now = new Date();
+      $meta.textContent = `추천 완료: ${now.toLocaleString("ko-KR")}`;
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        $meta.textContent = "클립보드에 전체 세트가 복사되었습니다.";
+      } catch (e) {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        $meta.textContent = "클립보드에 전체 세트가 복사되었습니다.";
+      }
+    }
+
+    $btnPick.addEventListener("click", () => {
+      lastPicks = pickFiveSets();
+      render(lastPicks);
+    });
+
+    $btnCopy.addEventListener("click", () => {
+      if (!lastPicks.length) {
+        $meta.textContent = "먼저 ‘5세트 추천’을 눌러 번호를 만든 뒤 복사하세요.";
+        return;
+      }
+      const text = lastPicks.map((set, i) => `세트 ${i + 1}: ${set.join(", ")}`).join("\n");
+      copyToClipboard(text);
+    });
+
+    // 첫 진입 시 자동 추천(원치 않으면 아래 2줄 삭제)
+    lastPicks = pickFiveSets();
+    render(lastPicks);
+  </script>
 </body>
 </html>
